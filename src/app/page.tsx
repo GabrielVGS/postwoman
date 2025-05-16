@@ -1,103 +1,296 @@
-import Image from "next/image";
+'use client';
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, X, Plus } from "lucide-react";
+// Import Highlight.js
+import hljs from 'highlight.js';
+import 'highlight.js/styles/github-dark.css'; // You can choose different styles
+
+const METHODS = [
+  { value: "get", label: "GET" },
+  { value: "post", label: "POST" },
+  { value: "put", label: "PUT" },
+  { value: "patch", label: "PATCH" },
+  { value: "delete", label: "DELETE" },
+];
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [url, setUrl] = useState("");
+  const [method, setMethod] = useState("get");
+  const [body, setBody] = useState("");
+  const [response, setResponse] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [responseTime, setResponseTime] = useState(null);
+  const [statusCode, setStatusCode] = useState(null);
+  const [activeTab, setActiveTab] = useState("body");
+  const [highlightedResponse, setHighlightedResponse] = useState("");
+  
+  // Headers state
+  const [headers, setHeaders] = useState([{ key: "", value: "" }]);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  const addHeader = () => {
+    setHeaders([...headers, { key: "", value: "" }]);
+  };
+
+  const removeHeader = (index) => {
+    const newHeaders = [...headers];
+    newHeaders.splice(index, 1);
+    setHeaders(newHeaders);
+  };
+
+  const updateHeaderKey = (index, key) => {
+    const newHeaders = [...headers];
+    newHeaders[index].key = key;
+    setHeaders(newHeaders);
+  };
+
+  const updateHeaderValue = (index, value) => {
+    const newHeaders = [...headers];
+    newHeaders[index].value = value;
+    setHeaders(newHeaders);
+  };
+
+  // Highlight JSON when response changes
+  useEffect(() => {
+    if (response) {
+      try {
+        const formattedJson = JSON.stringify(response, null, 2);
+        const highlighted = hljs.highlight(formattedJson, { language: 'json' }).value;
+        setHighlightedResponse(highlighted);
+      } catch (e) {
+        // If highlighting fails, just use the plain text
+        setHighlightedResponse(formatResponse(response));
+      }
+    }
+  }, [response]);
+
+  const handleSendRequest = async () => {
+    setLoading(true);
+    setError(null);
+    setResponse(null);
+    setStatusCode(null);
+    setResponseTime(null);
+    setHighlightedResponse("");
+
+    try {
+      // Convert headers array to object
+      const headersObject = {};
+      headers.forEach((header) => {
+        if (header.key.trim() && header.value.trim()) {
+          headersObject[header.key] = header.value;
+        }
+      });
+
+      let parsedBody = null;
+      if (body && (method === "post" || method === "put" || method === "patch")) {
+        try {
+          parsedBody = JSON.parse(body);
+        } catch (e) {
+          setError("JSON Inválido");
+          setLoading(false);
+          return;
+        }
+      }
+
+      const startTime = performance.now();
+      
+      const response = await axios({
+        url,
+        method,
+        data: parsedBody,
+        headers: headersObject,
+        validateStatus: () => true, // Don't throw on any status code
+      });
+      
+      const endTime = performance.now();
+
+      console.log("Response:", response);
+      setResponseTime(Math.round(endTime - startTime));
+      setStatusCode(response.status);
+      setResponse(response.data);
+    } catch (error) {
+      console.error("Error sending request:", error);
+      setError(error.message || "Um erro ocorreu ao enviar a solicitação");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status) => {
+    if (!status) return "bg-muted";
+    if (status >= 200 && status < 300) return "bg-green-500";
+    if (status >= 300 && status < 400) return "bg-blue-500";
+    if (status >= 400 && status < 500) return "bg-yellow-500";
+    return "bg-destructive";
+  };
+
+  const formatResponse = (data) => {
+    try {
+      return JSON.stringify(data, null, 2);
+    } catch (e) {
+      return String(data);
+    }
+  };
+
+  return (
+    <div className="min-h-screen p-4 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">POSTWoman</h1>
+      
+      {/* Request Section */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Requesição</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* URL and Method */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Select value={method} onValueChange={setMethod} className="w-full sm:w-40">
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {METHODS.map((method) => (
+                  <SelectItem key={method.value} value={method.value}>
+                    {method.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              type="text"
+              placeholder="https://example.com/api"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              className="flex-1"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            <Button 
+              onClick={handleSendRequest} 
+              disabled={loading || !url}
+              className="w-full sm:w-auto"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando
+                </>
+              ) : (
+                "Enviar"
+              )}
+            </Button>
+          </div>
+
+          {/* Tabs for Body, Headers */}
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="body">Body</TabsTrigger>
+              <TabsTrigger value="headers">Headers</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="body" className="space-y-2">
+              {(method === "post" || method === "put" || method === "patch") && (
+                <>
+                  <div className="text-sm font-medium">Corpo da requisição (JSON)</div>
+                  <Textarea
+                    placeholder='{"nome": "valor"}'
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    className="min-h-32 font-mono"
+                  />
+                </>
+              )}
+              {(method === "get" || method === "delete") && (
+                <div className="text-sm font-medium">
+                  Para métodos GET e DELETE, o corpo da requisição não é necessário.
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="headers" className="space-y-4">
+              {headers.map((header, index) => (
+                <div key={index} className="flex gap-2 items-center">
+                  <Input
+                    placeholder="Campo do header"
+                    value={header.key}
+                    onChange={(e) => updateHeaderKey(index, e.target.value)}
+                    className="flex-1"
+                  />
+                  <Input
+                    placeholder="Valor"
+                    value={header.value}
+                    onChange={(e) => updateHeaderValue(index, e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => removeHeader(index)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button variant="outline" size="sm" onClick={addHeader}>
+                <Plus className="h-4 w-4 mr-2" /> Adicionar Header
+              </Button>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      {/* Response Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>Resposta</CardTitle>
+            {statusCode && (
+              <div className="flex gap-2 items-center">
+                <Badge className={getStatusColor(statusCode)}>
+                  {statusCode}
+                </Badge>
+                {responseTime && (
+                  <Badge variant="outline">
+                    {responseTime}ms
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
+          {error && (
+            <CardDescription className="text-destructive">
+              {error}
+            </CardDescription>
+          )}
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center p-10">
+              <Loader2 className="h-10 w-10 animate-spin text-muted" />
+            </div>
+          ) : response ? (
+            <pre 
+              className="bg-muted p-4 rounded-md overflow-auto max-h-96 text-sm font-mono hljs"
+              dangerouslySetInnerHTML={{ __html: highlightedResponse }}
+            />
+          ) : (
+            <div className="text-center p-10 text-muted">
+              {error ? "Requisição falhou" : "Enviar uma requisição para ver a resposta"}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
