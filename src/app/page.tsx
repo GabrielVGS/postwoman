@@ -38,7 +38,7 @@ export default function Home() {
   const [statusCode, setStatusCode] = useState(null);
   const [activeTab, setActiveTab] = useState("body");
   const [highlightedResponse, setHighlightedResponse] = useState("");
-  
+
   // Headers state
   const [headers, setHeaders] = useState([{ key: "", value: "" }]);
 
@@ -68,7 +68,7 @@ export default function Home() {
   useEffect(() => {
     if (response) {
       try {
-        const formattedJson = JSON.stringify(response, null, 2);
+        const formattedJson = JSON.stringify(response.data, null, 2);
         const highlighted = hljs.highlight(formattedJson, { language: 'json' }).value;
         setHighlightedResponse(highlighted);
       } catch (e) {
@@ -107,7 +107,7 @@ export default function Home() {
       }
 
       const startTime = performance.now();
-      
+
       const response = await axios({
         url,
         method,
@@ -115,13 +115,16 @@ export default function Home() {
         headers: headersObject,
         validateStatus: () => true, // Don't throw on any status code
       });
-      
+
+
+
+
       const endTime = performance.now();
 
       console.log("Response:", response);
       setResponseTime(Math.round(endTime - startTime));
       setStatusCode(response.status);
-      setResponse(response.data);
+      setResponse(response);
     } catch (error) {
       console.error("Error sending request:", error);
       setError(error.message || "Um erro ocorreu ao enviar a solicitação");
@@ -149,7 +152,7 @@ export default function Home() {
   return (
     <div className="min-h-screen p-4 max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">POSTWoman</h1>
-      
+
       {/* Request Section */}
       <Card className="mb-6">
         <CardHeader>
@@ -177,8 +180,8 @@ export default function Home() {
               onChange={(e) => setUrl(e.target.value)}
               className="flex-1"
             />
-            <Button 
-              onClick={handleSendRequest} 
+            <Button
+              onClick={handleSendRequest}
               disabled={loading || !url}
               className="w-full sm:w-auto"
             >
@@ -198,7 +201,7 @@ export default function Home() {
               <TabsTrigger value="body">Body</TabsTrigger>
               <TabsTrigger value="headers">Headers</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="body" className="space-y-2">
               {(method === "post" || method === "put" || method === "patch") && (
                 <>
@@ -217,7 +220,7 @@ export default function Home() {
                 </div>
               )}
             </TabsContent>
-            
+
             <TabsContent value="headers" className="space-y-4">
               {headers.map((header, index) => (
                 <div key={index} className="flex gap-2 items-center">
@@ -233,8 +236,8 @@ export default function Home() {
                     onChange={(e) => updateHeaderValue(index, e.target.value)}
                     className="flex-1"
                   />
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="icon"
                     onClick={() => removeHeader(index)}
                   >
@@ -280,10 +283,29 @@ export default function Home() {
               <Loader2 className="h-10 w-10 animate-spin text-muted" />
             </div>
           ) : response ? (
-            <pre 
-              className="bg-muted p-4 rounded-md overflow-auto max-h-96 text-sm font-mono hljs"
-              dangerouslySetInnerHTML={{ __html: highlightedResponse }}
-            />
+            <div>
+              <Tabs defaultValue="JSON" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="JSON">JSON</TabsTrigger>
+                  <TabsTrigger value="RAW">RAW</TabsTrigger>
+                </TabsList>
+                <TabsContent value="JSON">
+                  <pre
+
+                    className="bg-muted p-4 rounded-md overflow-auto max-h-96 text-sm font-mono hljs"
+                    dangerouslySetInnerHTML={{ __html: highlightedResponse }}
+                  />
+                </TabsContent>
+
+                <TabsContent value="RAW">
+                  <pre className="bg-muted p-4 rounded-md overflow-auto max-h-96 text-sm font-mono hljs">
+                   { JSON.stringify(response, null, 2) }
+                  </pre>
+
+                </TabsContent>
+              </Tabs>
+            </div>
+
           ) : (
             <div className="text-center p-10 text-muted">
               {error ? "Requisição falhou" : "Enviar uma requisição para ver a resposta"}
