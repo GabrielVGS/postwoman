@@ -112,7 +112,7 @@ export default function Home() {
         method,
         data: parsedBody,
         headers: headersObject,
-        validateStatus: () => true, // Don't throw on any status code
+        validateStatus: () => true, 
       });
 
 
@@ -153,13 +153,12 @@ export default function Home() {
     <div className="min-h-screen p-4 max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">POSTWoman</h1>
 
-      {/* Request Section */}
+
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Requesição</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* URL and Method */}
           <div className="flex flex-col sm:flex-row gap-4">
             <Select value={method} onValueChange={setMethod} className="w-full sm:w-40">
               <SelectTrigger>
@@ -253,7 +252,7 @@ export default function Home() {
         </CardContent>
       </Card>
 
-      {/* Response Section */}
+      {/* Response */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
