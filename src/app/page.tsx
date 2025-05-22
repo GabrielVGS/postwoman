@@ -15,9 +15,9 @@ import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, X, Plus } from "lucide-react";
-// Import Highlight.js
+
 import hljs from 'highlight.js';
-import 'highlight.js/styles/github-dark.css'; // You can choose different styles
+import 'highlight.js/styles/github-dark.css';
 
 const METHODS = [
   { value: "get", label: "GET" },
@@ -39,7 +39,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("body");
   const [highlightedResponse, setHighlightedResponse] = useState("");
 
-  // Headers state
+
   const [headers, setHeaders] = useState([{ key: "", value: "" }]);
 
   const addHeader = () => {
@@ -64,7 +64,6 @@ export default function Home() {
     setHeaders(newHeaders);
   };
 
-  // Highlight JSON when response changes
   useEffect(() => {
     if (response) {
       try {
@@ -72,7 +71,6 @@ export default function Home() {
         const highlighted = hljs.highlight(formattedJson, { language: 'json' }).value;
         setHighlightedResponse(highlighted);
       } catch (e) {
-        // If highlighting fails, just use the plain text
         console.log("Error highlighting response:", e);
         setHighlightedResponse(formatResponse(response));
       }
@@ -88,7 +86,6 @@ export default function Home() {
     setHighlightedResponse("");
 
     try {
-      // Convert headers array to object
       const headersObject = {};
       headers.forEach((header) => {
         if (header.key.trim() && header.value.trim()) {
@@ -198,7 +195,7 @@ export default function Home() {
             </Button>
           </div>
 
-          {/* Tabs for Body, Headers */}
+ 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="body">Body</TabsTrigger>
