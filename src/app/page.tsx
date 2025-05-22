@@ -93,12 +93,14 @@ export default function Home() {
         }
       });
 
+
+
       let parsedBody = null;
       if (body && (method === "post" || method === "put" || method === "patch")) {
         try {
           parsedBody = JSON.parse(body);
         } catch (e) {
-          console.error("Error parsing JSON body:", e);
+          console.error("Error JSON", e);
           setError("JSON Inválido");
           setLoading(false);
           return;
