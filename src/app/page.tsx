@@ -46,19 +46,19 @@ export default function Home() {
     setHeaders([...headers, { key: "", value: "" }]);
   };
 
-  const removeHeader = (index) => {
+  const removeHeader = (index: number) => {
     const newHeaders = [...headers];
     newHeaders.splice(index, 1);
     setHeaders(newHeaders);
   };
 
-  const updateHeaderKey = (index, key) => {
+  const updateHeaderKey = (index: number, key: string) => {
     const newHeaders = [...headers];
     newHeaders[index].key = key;
     setHeaders(newHeaders);
   };
 
-  const updateHeaderValue = (index, value) => {
+  const updateHeaderValue = (index: number, value: string) => {
     const newHeaders = [...headers];
     newHeaders[index].value = value;
     setHeaders(newHeaders);
@@ -73,6 +73,7 @@ export default function Home() {
         setHighlightedResponse(highlighted);
       } catch (e) {
         // If highlighting fails, just use the plain text
+        console.log("Error highlighting response:", e);
         setHighlightedResponse(formatResponse(response));
       }
     }
@@ -100,6 +101,7 @@ export default function Home() {
         try {
           parsedBody = JSON.parse(body);
         } catch (e) {
+          console.error("Error parsing JSON body:", e);
           setError("JSON Inválido");
           setLoading(false);
           return;
@@ -145,6 +147,7 @@ export default function Home() {
     try {
       return JSON.stringify(data, null, 2);
     } catch (e) {
+      console.error("Error formatting response:", e);
       return String(data);
     }
   };
